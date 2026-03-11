@@ -19,7 +19,7 @@ This package includes a basic template for a racing game in Godot 4.5 (stable). 
 | --- | --- |
 | <kbd>W</kbd> | Accelerate/brake |
 | <kbd>S</kbd> | Brake/reverse |
-| <kbd>S</kbd> <kbd>D</kbd> | Steering |
+| <kbd>A</kbd> <kbd>D</kbd> | Steering |
 
 ### Instructions
 
