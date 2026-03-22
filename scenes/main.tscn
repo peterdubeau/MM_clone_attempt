@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://clq7nox1juh3a"]
+[gd_scene load_steps=23 format=3 uid="uid://clq7nox1juh3a"]
 
 [ext_resource type="Environment" uid="uid://c3bs0wfxpri8g" path="res://scenes/main-environment.tres" id="1_q4t1r"]
 [ext_resource type="Script" uid="uid://bqite16pastgo" path="res://scripts/vehicle.gd" id="2_xjb8m"]
@@ -66,6 +66,8 @@ rough = true
 friction = 0.0
 bounce = 0.1
 
+[sub_resource type="Curve3D" id="Curve3D_ya4ey"]
+
 [node name="Main" type="Node3D"]
 
 [node name="Environment" type="WorldEnvironment" parent="."]
@@ -129,18 +131,81 @@ angular_damp = 4.0
 [node name="CollisionShape" type="CollisionShape3D" parent="Vehicle/Sphere"]
 shape = SubResource("SphereShape3D_hhncp")
 
+[node name="Vehicle2" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0, 5)
+script = ExtResource("2_xjb8m")
+action_left = "p2_left"
+action_right = "p2_right"
+action_back = "p2_back"
+action_forward = "p2_forward"
+
+[node name="Ground" type="RayCast3D" parent="Vehicle2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+target_position = Vector3(0, -0.7, 0)
+hit_back_faces = false
+debug_shape_custom_color = Color(0.898039, 0, 0, 1)
+
+[node name="Container" type="Node3D" parent="Vehicle2"]
+
+[node name="Model" parent="Vehicle2/Container" instance=ExtResource("9_cmq2j")]
+
+[node name="TrailLeft" type="GPUParticles3D" parent="Vehicle2/Container"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.05, -0.35)
+material_override = SubResource("StandardMaterial3D_tfk12")
+cast_shadow = 0
+amount = 32
+lifetime = 0.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_xgt35")
+draw_pass_1 = SubResource("QuadMesh_68fxn")
+
+[node name="TrailRight" type="GPUParticles3D" parent="Vehicle2/Container"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.05, -0.35)
+material_override = SubResource("StandardMaterial3D_tfk12")
+cast_shadow = 0
+amount = 32
+lifetime = 0.5
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_xgt35")
+draw_pass_1 = SubResource("QuadMesh_68fxn")
+
+[node name="ScreechSound" type="AudioStreamPlayer3D" parent="Vehicle2/Container"]
+stream = ExtResource("5_choun")
+autoplay = true
+
+[node name="EngineSound" type="AudioStreamPlayer3D" parent="Vehicle2/Container"]
+stream = ExtResource("6_choun")
+autoplay = true
+
+[node name="Sphere" type="RigidBody3D" parent="Vehicle2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+collision_layer = 8
+mass = 1000.0
+physics_material_override = SubResource("PhysicsMaterial_eyo0u")
+gravity_scale = 1.5
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 1
+linear_damp = 0.1
+angular_damp_mode = 1
+angular_damp = 4.0
+
+[node name="CollisionShape" type="CollisionShape3D" parent="Vehicle2/Sphere"]
+shape = SubResource("SphereShape3D_hhncp")
+
 [node name="Plane" type="CSGBox3D" parent="."]
 transparency = 1.0
 use_collision = true
 size = Vector3(60, 0, 60)
 
-[node name="View" type="Node3D" parent="." node_paths=PackedStringArray("target")]
-transform = Transform3D(0.707107, -0.40558, 0.579228, 0, 0.819152, 0.573576, -0.707107, -0.40558, 0.579228, 3.5, 0, 5)
+[node name="View" type="Node3D" parent="." node_paths=PackedStringArray("player_one_vehicle", "player_two_vehicle")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0, 5)
 script = ExtResource("5_0lrhn")
-target = NodePath("../Vehicle/Container")
+player_one_vehicle = NodePath("../Vehicle")
+player_two_vehicle = NodePath("../Vehicle2")
 
 [node name="Camera" type="Camera3D" parent="View"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 16)
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 16, 0)
 current = true
 fov = 40.0
 far = 60.0
@@ -175,3 +240,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.7772, -0.143123, -13.5596
 
 [node name="vehicle-truck-red" parent="." instance=ExtResource("11_wocnk")]
 transform = Transform3D(-0.913034, 0, 0.407884, 0, 1, 0, -0.407884, 0, -0.913034, -1.36138, -0.148564, -23.8)
+
+[node name="TrackCenterLine" type="Path3D" parent="."]
+curve = SubResource("Curve3D_ya4ey")

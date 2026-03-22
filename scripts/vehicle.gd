@@ -25,6 +25,12 @@ extends Node3D
 @onready var screech_sound: AudioStreamPlayer3D = $Container/ScreechSound
 @onready var engine_sound: AudioStreamPlayer3D = $Container/EngineSound
 
+@export_group("Input")
+@export var action_left := "p1_left"
+@export var action_right := "p1_right"
+@export var action_back := "p1_back"
+@export var action_forward := "p1_forward"
+
 var input: Vector3
 var normal: Vector3
 
@@ -33,10 +39,24 @@ var angular_speed: float
 var linear_speed: float
 
 var colliding: bool
+var distance_traveled := 0.0
+var last_sphere_position := Vector3.ZERO
+var is_despawned := false
+
+var default_collision_layer := 0
+var default_collision_mask := 0
 
 # Functions
 
+func _ready():
+	last_sphere_position = sphere.global_position
+	default_collision_layer = sphere.collision_layer
+	default_collision_mask = sphere.collision_mask
+
 func _physics_process(delta):
+	
+	distance_traveled += sphere.global_position.distance_to(last_sphere_position)
+	last_sphere_position = sphere.global_position
 	
 	handle_input(delta)
 	
@@ -96,8 +116,8 @@ func _physics_process(delta):
 func handle_input(delta):
 	
 	if raycast.is_colliding():
-		input.x = Input.get_axis("left", "right")
-		input.z = Input.get_axis("back", "forward")
+		input.x = Input.get_axis(action_left, action_right)
+		input.z = Input.get_axis(action_back, action_forward)
 	
 	sphere.angular_velocity += vehicle_model.get_global_transform().basis.x * (linear_speed * 100) * delta
 
@@ -163,3 +183,47 @@ func align_with_y(xform, new_y):
 	xform.basis.x = -xform.basis.z.cross(new_y)
 	xform.basis = xform.basis.orthonormalized()
 	return xform
+
+
+func freeze_for_reset():
+	_set_motion_state(Vector3.ZERO)
+	sphere.freeze = true
+	sphere.sleeping = true
+	set_physics_process(false)
+
+
+func resume_after_reset():
+	sphere.freeze = false
+	sphere.sleeping = false
+	set_physics_process(true)
+	last_sphere_position = sphere.global_position
+
+
+func despawn_for_reset():
+	is_despawned = true
+	freeze_for_reset()
+	visible = false
+	sphere.collision_layer = 0
+	sphere.collision_mask = 0
+
+
+func respawn_for_reset(spawn_position: Vector3, spawn_basis: Basis):
+	is_despawned = false
+	visible = true
+	global_basis = spawn_basis
+	sphere.global_position = spawn_position + Vector3(0, 0.5, 0)
+	raycast.global_position = sphere.global_position
+	vehicle_model.global_basis = spawn_basis
+	_set_motion_state(Vector3.ZERO)
+	sphere.collision_layer = default_collision_layer
+	sphere.collision_mask = default_collision_mask
+	resume_after_reset()
+
+
+func _set_motion_state(next_input: Vector3):
+	input = next_input
+	linear_speed = 0.0
+	angular_speed = 0.0
+	acceleration = 0.0
+	sphere.linear_velocity = Vector3.ZERO
+	sphere.angular_velocity = Vector3.ZERO
